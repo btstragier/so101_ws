@@ -2,6 +2,8 @@
 <!-- Generated using onshape-to-robot -->
 <!-- Onshape https://cad.onshape.com/documents/7715cc284bb430fe6dab4ffd/w/4fd0791b683777b02f8d975a/e/826c553ede3b7592eb9ca800 -->
 <!-- Derived from so101_new_calib.urdf: adds wrist camera mount + wrist camera (Hex-Nut 32x32 UVC module form factor) -->
+
+
 <robot name="so101_new_calib_camera" xmlns:xacro="http://www.ros.org/wiki/xacro">
 <xacro:arg name="use_camera" default="true"/>
   <!-- Materials -->
@@ -458,5 +460,26 @@
     <child link="wrist_camera_link"/>
   </joint>
   </xacro:if>
+
+
+<xacro:macro name="joint_interfaces" params="name">
+  <joint name="${name}">
+    <command_interface name="position"/>
+    <state_interface name="position"/>
+    <state_interface name="velocity"/>
+  </joint>
+</xacro:macro>
+
+<ros2_control name="so101_system" type="system">
+  <hardware>
+    <plugin>mock_components/GenericSystem</plugin>
+  </hardware>
+  <xacro:joint_interfaces name="shoulder_pan"/>
+  <xacro:joint_interfaces name="shoulder_lift"/>
+  <xacro:joint_interfaces name="elbow_flex"/>
+  <xacro:joint_interfaces name="wrist_flex"/>
+  <xacro:joint_interfaces name="wrist_roll"/>
+  <xacro:joint_interfaces name="gripper"/>
+</ros2_control>
 
 </robot>

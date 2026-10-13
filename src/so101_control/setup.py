@@ -23,7 +23,8 @@ setup(
         ],
     },
     entry_points={
-        'console_scripts': [
+        'console_scripts': [ 'sine_mover = so101_control.sine_mover:main',
+                             "fk_monitor = so101_control.fk_monitor:main",
         ],
     },
 )

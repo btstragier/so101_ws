@@ -1,0 +1,45 @@
+<!-- Gazebo additions, spliced into the processed so101.urdf.xacro by
+     so101_gazebo_bringup/launch/gazebo.launch.py (just before </robot>).
+     @CONTROLLERS@ is replaced with the path to controllers.yaml. -->
+
+<!-- Gazebo drops an un-anchored model under gravity: fix base_link to the world -->
+<link name="world"/>
+<joint name="world_to_base" type="fixed">
+  <parent link="world"/>
+  <child link="base_link"/>
+</joint>
+
+<!-- Run controller_manager inside Gazebo via gz_ros2_control -->
+<gazebo>
+  <plugin filename="gz_ros2_control-system"
+          name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+    <parameters>@CONTROLLERS@</parameters>
+  </plugin>
+</gazebo>
+
+<!-- Wrist camera. Gazebo cameras look along +X with +Z up; the URDF camera
+     link's lens axis is +Z (image up = link +X, image right = link +Y), hence
+     the rotation. The sensor sits at the lens tip, same as the MuJoCo model.
+     60 deg vertical fov at 640x480 -> 1.3118 rad horizontal. -->
+<gazebo reference="wrist_camera_link">
+  <sensor name="wrist_camera" type="camera">
+    <always_on>1</always_on>
+    <update_rate>15</update_rate>
+    <visualize>false</visualize>
+    <topic>wrist_camera/image_raw</topic>
+    <gz_frame_id>wrist_camera_link</gz_frame_id>
+    <pose>0 0 0.0265 0 -1.5708 3.14159</pose>
+    <camera>
+      <horizontal_fov>1.3118</horizontal_fov>
+      <image>
+        <width>640</width>
+        <height>480</height>
+        <format>R8G8B8</format>
+      </image>
+      <clip>
+        <near>0.001</near>
+        <far>10</far>
+      </clip>
+    </camera>
+  </sensor>
+</gazebo>

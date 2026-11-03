@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>so101_gazebo_description</name>
+  <version>0.0.0</version>
+  <description>Gazebo-specific additions for the SO-101: world, camera sensor, ros2_control plugin tag</description>
+  <maintainer email="btstragier@gmail.com">bjorn</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <exec_depend>so101_description</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

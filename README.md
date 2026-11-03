@@ -13,8 +13,10 @@ To practice my ROS2, reinforcement learning, control and perception skills.
 | `so101_control` | Python nodes: `sine_mover` (trajectory publisher), `fk_monitor` (Pinocchio forward kinematics) |
 | `so101_mujoco_description` | MuJoCo (MJCF) model of the arm, generated from the URDF |
 | `so101_mujoco_bringup` | ros2_control bringup running the arm in **MuJoCo** |
+| `so101_gazebo_description` | Gazebo additions: world, camera sensor, `gz_ros2_control` plugin tag |
+| `so101_gazebo_bringup` | ros2_control bringup running the arm in **Gazebo** (Harmonic) |
 
-The mock and MuJoCo setups are independent and use the same controller names
+The mock, MuJoCo and Gazebo setups are independent and use the same controller names
 (`joint_state_broadcaster`, `arm_controller`, `gripper_controller`), so the
 nodes in `so101_control` work with either one.
 
@@ -22,6 +24,7 @@ nodes in `so101_control` work with either one.
 
 - ROS 2 Jazzy
 - `ros-jazzy-mujoco-ros2-control` and `ros-jazzy-mujoco-vendor` (MuJoCo setup only)
+- `ros-jazzy-ros-gz` and `ros-jazzy-gz-ros2-control` (Gazebo setup only)
 - `pinocchio` (for `fk_monitor`)
 
 ```bash
@@ -83,7 +86,40 @@ Launch arguments:
 ros2 launch so101_mujoco_bringup mujoco.launch.py headless:=true
 ```
 
-#### Wrist camera (MuJoCo)
+#### Gazebo
+
+```bash
+ros2 launch so101_gazebo_bringup gazebo.launch.py
+```
+
+This starts Gazebo Harmonic with the arm, `robot_state_publisher`,
+`gz_ros2_control` (the same three controllers, running inside Gazebo), a bridge
+for `/clock` and the wrist camera, and RViz.
+
+Launch arguments:
+
+| Argument | Default | Description |
+| --- | --- | --- |
+| `gui` | `true` | `false` runs the Gazebo server only (no window; the camera still renders) |
+| `rviz` | `true` | start RViz with the robot model and a Wrist Camera image display |
+
+```bash
+ros2 launch so101_gazebo_bringup gazebo.launch.py gui:=false rviz:=false
+```
+
+The wrist camera publishes `/wrist_camera/image_raw` and
+`/wrist_camera/camera_info`, the same topics as in MuJoCo, so
+`ros2 run rqt_image_view rqt_image_view /wrist_camera/image_raw` works in both.
+The camera is defined in `so101_gazebo_description/urdf/so101_gazebo.urdf.xml`
+and bridged to ROS in `gazebo.launch.py`. The floor is a plain colour with no
+texture, so from the wrist camera it looks like a flat backdrop.
+
+> Only run one bringup at a time. They all use the same controller and topic
+> names, so a second one (or a leftover `sine_mover` from another terminal)
+> will fight the first. To test in isolation, set `ROS_DOMAIN_ID` and
+> `GZ_PARTITION` to unique values in the terminal(s) you use.
+
+#### Wrist camera (MuJoCo window and topics)
 
 The MuJoCo model has a wrist camera, `wrist_camera`, mounted on the gripper and
 looking toward the jaws. The `mujoco_ros2_control` camera plugin publishes it
@@ -121,7 +157,7 @@ module. Change it in `scripts/urdf_to_mjcf.py` and regenerate the MJCF.
 
 ### Move and inspect the arm
 
-With either bringup running, in other terminals:
+With any bringup running, in other terminals:
 
 ```bash
 # Check the controllers are active

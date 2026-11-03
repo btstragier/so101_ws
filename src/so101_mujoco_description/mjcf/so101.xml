@@ -22,6 +22,8 @@
     <mesh name="wrist_roll_pitch_so101_v2" content_type="model/stl" file="wrist_roll_pitch_so101_v2.stl"/>
     <mesh name="wrist_roll_follower_so101_v1" content_type="model/stl" file="wrist_roll_follower_so101_v1.stl"/>
     <mesh name="moving_jaw_so101_v1" content_type="model/stl" file="moving_jaw_so101_v1.stl"/>
+    <mesh name="wrist_camera_mount_so101_v1" content_type="model/stl" file="wrist_camera_mount_so101_v1.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="wrist_camera_so101_v1" content_type="model/stl" file="wrist_camera_so101_v1.stl"/>
   </asset>
 
   <worldbody>
@@ -65,6 +67,15 @@
                   <inertial pos="-0.00157495 -0.0300244 0.0192755" quat="0.695265 0.717965 -0.0245618 -0.0230097" mass="0.012" diaginertia="6.63582e-06 5.29092e-06 1.86523e-06"/>
                   <joint name="gripper" range="-0.174533 1.74533" actuatorfrcrange="-10 10"/>
                   <geom pos="0 0 0.0189" quat="1 0 0 0" rgba="1 0.82 0.12 1" mesh="moving_jaw_so101_v1"/>
+                </body>
+                <body name="wrist_camera_mount_link" pos="-0.015 0.024 -0.0315" quat="0.499798 -0.5002 0.499802 -0.5002">
+                  <inertial pos="0 0 0" mass="0.02" diaginertia="1e-05 1e-05 1e-05"/>
+                  <geom quat="1 0 0 0" rgba="1 0.82 0.12 1" mesh="wrist_camera_mount_so101_v1"/>
+                  <body name="wrist_camera_link" pos="-0.04941 -0.03813 0.0175" quat="0.379787 -0.596458 -0.379788 -0.596456">
+<camera name="wrist_camera" pos="0 0 0.0265" xyaxes="0 1 0 1 0 0" fovy="60" resolution="640 480"/>
+                    <inertial pos="0 0 0" mass="0.015" diaginertia="1e-05 1e-05 1e-05"/>
+                    <geom rgba="0.1 0.1 0.1 1" mesh="wrist_camera_so101_v1"/>
+                  </body>
                 </body>
               </body>
             </body>

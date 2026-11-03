@@ -1,0 +1,12 @@
+/**:
+  ros__parameters:
+    mujoco_plugins:
+      mujoco_camera_plugin:
+        type: "mujoco_ros2_control_plugins/CameraPlugin"
+        camera_publish_rate: 15.0
+        # sub-key must match the <camera name> in the MJCF
+        wrist_camera:
+          frame_name: wrist_camera_link
+          image_topic: /wrist_camera/image_raw
+          depth_topic: /wrist_camera/depth
+          info_topic: /wrist_camera/camera_info

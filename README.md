@@ -59,9 +59,6 @@ ros2 launch so101_bringup bringup.launch.py
 This starts `robot_state_publisher`, `ros2_control_node` with
 `mock_components/GenericSystem`, the three controllers and RViz.
 
-> Note: this is not Gazebo. The launch files reference RViz configs
-> (`view_robot.rviz`, `robot_view.rviz`) that don't exist in the repo; only
-> `basic_description.rviz` does. RViz opens with its default config, so set
 > Fixed Frame to `base_link` and add a RobotModel display.
 
 #### MuJoCo
@@ -70,18 +67,57 @@ This starts `robot_state_publisher`, `ros2_control_node` with
 ros2 launch so101_mujoco_bringup mujoco.launch.py
 ```
 
-This opens the MuJoCo viewer and starts `robot_state_publisher`, the
-`mujoco_ros2_control` `ros2_control_node` and the same three controllers.
+This opens the MuJoCo viewer and RViz, and starts `robot_state_publisher`, the
+`mujoco_ros2_control` `ros2_control_node` (which also publishes the camera) and
+the same three controllers.
 
 Launch arguments:
 
 | Argument | Default | Description |
 | --- | --- | --- |
-| `headless` | `false` | `true` runs MuJoCo without the GUI |
+| `headless` | `false` | `true` runs MuJoCo without the GUI (camera topics still publish) |
+| `rviz` | `true` | start RViz with the robot model and a Wrist Camera image display (`rviz/mujoco.rviz`) |
+| `use_camera` | `true` | include the camera links in the URDF used by `robot_state_publisher`/TF (the MuJoCo model always has the camera) |
 
 ```bash
 ros2 launch so101_mujoco_bringup mujoco.launch.py headless:=true
 ```
+
+#### Wrist camera (MuJoCo)
+
+The MuJoCo model has a wrist camera, `wrist_camera`, mounted on the gripper and
+looking toward the jaws. The `mujoco_ros2_control` camera plugin publishes it
+at 15 Hz (640x480, configured in
+`so101_mujoco_bringup/config/mujoco_plugins.yaml`):
+
+| Topic | Type |
+| --- | --- |
+| `/wrist_camera/image_raw` | `sensor_msgs/Image` (rgb8) |
+| `/wrist_camera/depth` | `sensor_msgs/Image` |
+| `/wrist_camera/camera_info` | `sensor_msgs/CameraInfo` |
+
+To see what the camera sees, use either of these:
+
+```bash
+# 1. ROS image viewer (works headless too)
+ros2 run rqt_image_view rqt_image_view /wrist_camera/image_raw
+
+# 2. In the MuJoCo window (not headless), click the window first, then:
+#      ]  or  [    cycle through cameras (free -> wrist_camera -> ...)
+#      Esc         back to the free camera
+#      Tab         show/hide the left panel (it has a Rendering section with a Camera dropdown)
+```
+
+(RViz also works: add an Image display on `/wrist_camera/image_raw`.)
+
+The camera's field of view (`fovy="60"`) is a guess, not measured from the real
+module. Change it in `scripts/urdf_to_mjcf.py` and regenerate the MJCF.
+
+> Troubleshooting: if RViz dies with `symbol lookup error: /snap/core20/...`,
+> your terminal was started from the VS Code snap and inherited its `GTK_*`/
+> `GIO_*` variables. Use a normal terminal, or run
+> `unset GTK_PATH GIO_MODULE_DIR GTK_EXE_PREFIX LOCPATH GTK_IM_MODULE_FILE GSETTINGS_SCHEMA_DIR`
+> and reset `XDG_DATA_DIRS` before launching.
 
 ### Move and inspect the arm
 
@@ -112,7 +148,7 @@ ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/Joint
 python3 src/so101_mujoco_description/scripts/urdf_to_mjcf.py
 ```
 
-The generated MJCF uses one collision mesh per link, position actuators with
+The generated MJCF uses one collision mesh per link, a `wrist_camera` camera, position actuators with
 ranges taken from the URDF joint limits, and no arm self-collision. Actuator
 gains (`kp`, `kv`, `armature`) are tuned by hand in the script, not
 identified from real STS3215 servos. Forward kinematics match the URDF

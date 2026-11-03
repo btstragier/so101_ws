@@ -7,11 +7,13 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterFile
 
 
 def _launch_setup(context):
     headless = LaunchConfiguration('headless').perform(context)
     use_camera = LaunchConfiguration('use_camera').perform(context)
+    rviz = LaunchConfiguration('rviz').perform(context)
 
     desc_share = get_package_share_directory('so101_description')
     bringup_share = get_package_share_directory('so101_mujoco_bringup')
@@ -35,12 +37,14 @@ def _launch_setup(context):
         raise RuntimeError('expected exactly one <hardware> block in the xacro')
 
     controllers = os.path.join(bringup_share, 'config', 'controllers.yaml')
-    return [
+    plugins = os.path.join(bringup_share, 'config', 'mujoco_plugins.yaml')
+    nodes = [
         Node(package='robot_state_publisher',
              executable='robot_state_publisher',
              parameters=[{'robot_description': urdf}]),
         Node(package='mujoco_ros2_control', executable='ros2_control_node',
-             parameters=[{'robot_description': urdf}, controllers],
+             parameters=[{'robot_description': urdf}, controllers,
+                         ParameterFile(plugins)],
              output='screen'),
         Node(package='controller_manager', executable='spawner',
              arguments=['joint_state_broadcaster']),
@@ -49,12 +53,20 @@ def _launch_setup(context):
         Node(package='controller_manager', executable='spawner',
              arguments=['gripper_controller']),
     ]
+    if rviz == 'true':
+        nodes.append(Node(
+            package='rviz2', executable='rviz2',
+            arguments=['-d', os.path.join(bringup_share, 'rviz', 'mujoco.rviz')]))
+    return nodes
 
 
 def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('headless', default_value='false',
                               description='Run MuJoCo without the GUI'),
-        DeclareLaunchArgument('use_camera', default_value='false'),
+        DeclareLaunchArgument('rviz', default_value='true',
+                              description='Start RViz (robot model + wrist camera image)'),
+        DeclareLaunchArgument('use_camera', default_value='true',
+                              description='Include camera links in the URDF (the MuJoCo model always has the camera)'),
         OpaqueFunction(function=_launch_setup),
     ])

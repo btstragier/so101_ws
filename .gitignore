@@ -1,3 +1,12 @@
+# colcon
 install/
 log/
 build/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Intermediate output of so101_mujoco_description/scripts/urdf_to_mjcf.py
+src/so101_mujoco_description/mjcf/so101_raw.xml

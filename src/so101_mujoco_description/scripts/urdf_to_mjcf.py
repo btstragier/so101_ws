@@ -2,7 +2,7 @@
 """Convert so101.urdf.xacro into a raw MJCF (mjcf/so101_raw.xml).
 
 Run with ROS sourced and the `mujoco` Python package available:
-    python3 urdf_to_mjcf.py [--camera]
+    python3 urdf_to_mjcf.py [--no-camera]
 The raw output is a starting point; so101.xml is the hand-edited version
 (actuators, floor, tuned contacts) that the simulation actually uses.
 """
@@ -45,6 +45,15 @@ def postprocess(raw_path, out_path):
     text = re.sub(r'  <compiler [^>]*/>\n', HEADER, text)
     ranges = dict(re.findall(
         r'<joint name="(\w+)" range="([^"]+)"', text))
+    # Wrist camera. The URDF camera link's lens axis is +Z (barrel up to
+    # z=0.0263 in the mesh); MuJoCo cameras look along their own -Z with +Y up,
+    # so flip Z; X/Y are then swapped so image-up is world-up at the home
+    # pose. fovy is a guess for a generic UVC module.
+    text = re.sub(
+        r'(<body name="wrist_camera_link"[^>]*>)',
+        r'\1\n<camera name="wrist_camera" pos="0 0 0.0265" '
+        r'xyaxes="0 1 0 1 0 0" fovy="60" resolution="640 480"/>',
+        text, count=1)
     acts = ''.join(
         '    <position name="%s" joint="%s" ctrlrange="%s"/>\n'
         % (j, j, ranges[j]) for j in JOINTS)
@@ -55,13 +64,14 @@ def postprocess(raw_path, out_path):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--camera', action='store_true')
+    ap.add_argument('--no-camera', action='store_true',
+                    help='omit the wrist camera mount/body/<camera>')
     args = ap.parse_args()
 
     share = get_package_share_directory('so101_description')
     urdf = xacro.process_file(
         os.path.join(share, 'urdf', 'so101.urdf.xacro'),
-        mappings={'use_camera': 'true' if args.camera else 'false'}).toxml()
+        mappings={'use_camera': 'false' if args.no_camera else 'true'}).toxml()
 
     # MuJoCo can't resolve package:// and needs <mujoco><compiler/> to keep
     # the base link and not discard visual-only geometry.

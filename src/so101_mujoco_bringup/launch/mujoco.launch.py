@@ -4,7 +4,9 @@ import re
 import xacro
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, OpaqueFunction
+from launch.actions import (DeclareLaunchArgument, IncludeLaunchDescription,
+                            OpaqueFunction)
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterFile
@@ -14,6 +16,7 @@ def _launch_setup(context):
     headless = LaunchConfiguration('headless').perform(context)
     use_camera = LaunchConfiguration('use_camera').perform(context)
     rviz = LaunchConfiguration('rviz').perform(context)
+    webcam = LaunchConfiguration('webcam').perform(context)
 
     desc_share = get_package_share_directory('so101_description')
     bringup_share = get_package_share_directory('so101_mujoco_bringup')
@@ -57,6 +60,10 @@ def _launch_setup(context):
         nodes.append(Node(
             package='rviz2', executable='rviz2',
             arguments=['-d', os.path.join(bringup_share, 'rviz', 'mujoco.rviz')]))
+    if webcam == 'true':
+        nodes.append(IncludeLaunchDescription(PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('so101_control'),
+                         'launch', 'webcam.launch.py'))))
     return nodes
 
 
@@ -68,5 +75,7 @@ def generate_launch_description():
                               description='Start RViz (robot model + wrist camera image)'),
         DeclareLaunchArgument('use_camera', default_value='true',
                               description='Include camera links in the URDF (the MuJoCo model always has the camera)'),
+        DeclareLaunchArgument('webcam', default_value='false',
+                              description='Also publish the PC webcam on /pc_camera/image_raw'),
         OpaqueFunction(function=_launch_setup),
     ])

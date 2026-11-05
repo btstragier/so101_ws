@@ -9,14 +9,13 @@ To practice my ROS2, reinforcement learning, control and perception skills.
 | Package | What it is |
 | --- | --- |
 | `so101_description` | URDF/xacro, meshes and RViz config for the SO-101 arm |
-| `so101_bringup` | ros2_control bringup with **mock hardware** + RViz |
-| `so101_control` | Python nodes: `sine_mover` (trajectory publisher), `fk_monitor` (Pinocchio forward kinematics) |
+| `so101_control` | Python nodes: `sine_mover` (trajectory publisher), `fk_monitor` (Pinocchio forward kinematics), `webcam.launch.py` (PC webcam) |
 | `so101_mujoco_description` | MuJoCo (MJCF) model of the arm, generated from the URDF |
 | `so101_mujoco_bringup` | ros2_control bringup running the arm in **MuJoCo** |
 | `so101_gazebo_description` | Gazebo additions: world, camera sensor, `gz_ros2_control` plugin tag |
 | `so101_gazebo_bringup` | ros2_control bringup running the arm in **Gazebo** (Harmonic) |
 
-The mock, MuJoCo and Gazebo setups are independent and use the same controller names
+The MuJoCo and Gazebo setups are independent and use the same controller names
 (`joint_state_broadcaster`, `arm_controller`, `gripper_controller`), so the
 nodes in `so101_control` work with either one.
 
@@ -53,17 +52,6 @@ Joint sliders (joint_state_publisher_gui) + RViz, no controllers:
 ros2 launch so101_description view_robot.launch.py
 ```
 
-#### Mock hardware (ros2_control + RViz)
-
-```bash
-ros2 launch so101_bringup bringup.launch.py
-```
-
-This starts `robot_state_publisher`, `ros2_control_node` with
-`mock_components/GenericSystem`, the three controllers and RViz.
-
-> Fixed Frame to `base_link` and add a RobotModel display.
-
 #### MuJoCo
 
 ```bash
@@ -79,8 +67,9 @@ Launch arguments:
 | Argument | Default | Description |
 | --- | --- | --- |
 | `headless` | `false` | `true` runs MuJoCo without the GUI (camera topics still publish) |
-| `rviz` | `true` | start RViz with the robot model and a Wrist Camera image display (`rviz/mujoco.rviz`) |
+| `rviz` | `true` | start RViz with the robot model, a Wrist Camera image display and a PC Camera image display (empty unless `webcam:=true`) (`rviz/mujoco.rviz`) |
 | `use_camera` | `true` | include the camera links in the URDF used by `robot_state_publisher`/TF (the MuJoCo model always has the camera) |
+| `webcam` | `false` | also publish the PC webcam on `/pc_camera/image_raw` (see below) |
 
 ```bash
 ros2 launch so101_mujoco_bringup mujoco.launch.py headless:=true
@@ -101,7 +90,8 @@ Launch arguments:
 | Argument | Default | Description |
 | --- | --- | --- |
 | `gui` | `true` | `false` runs the Gazebo server only (no window; the camera still renders) |
-| `rviz` | `true` | start RViz with the robot model and a Wrist Camera image display |
+| `rviz` | `true` | start RViz with the robot model, a Wrist Camera image display and a PC Camera image display (empty unless `webcam:=true`) |
+| `webcam` | `false` | also publish the PC webcam on `/pc_camera/image_raw` (see below) |
 
 ```bash
 ros2 launch so101_gazebo_bringup gazebo.launch.py gui:=false rviz:=false
@@ -148,6 +138,20 @@ ros2 run rqt_image_view rqt_image_view /wrist_camera/image_raw
 
 The camera's field of view (`fovy="60"`) is a guess, not measured from the real
 module. Change it in `scripts/urdf_to_mjcf.py` and regenerate the MJCF.
+
+#### PC webcam
+
+Streams your PC's webcam with `v4l2_camera` (`sudo apt install ros-jazzy-v4l2-camera`):
+
+```bash
+ros2 launch so101_control webcam.launch.py [video_device:=/dev/video0] [image_size:='[640,480]']
+ros2 run rqt_image_view rqt_image_view /pc_camera/image_raw
+```
+
+Topics: `/pc_camera/image_raw` and `/pc_camera/camera_info`. Both bringups
+(`mujoco.launch.py`, `gazebo.launch.py`) also accept
+`webcam:=true` to start it together. If the image is blank, try another device
+such as `/dev/video2` (odd-numbered nodes are usually metadata).
 
 > Troubleshooting: if RViz dies with `symbol lookup error: /snap/core20/...`,
 > your terminal was started from the VS Code snap and inherited its `GTK_*`/

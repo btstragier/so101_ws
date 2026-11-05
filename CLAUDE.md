@@ -1,14 +1,13 @@
 # CLAUDE.md
 
-ROS 2 Jazzy workspace for the SO-101 arm (5 arm joints + gripper). One xacro is the single source of truth. Three interchangeable bringups share the same controllers: mock hardware, MuJoCo and Gazebo Harmonic. See `README.md` for fuller setup notes.
+ROS 2 Jazzy workspace for the SO-101 arm (5 arm joints + gripper). One xacro is the single source of truth. Two interchangeable bringups share the same controllers: MuJoCo and Gazebo Harmonic. See `README.md` for fuller setup notes.
 
 ## Packages (`src/`)
 
 | Package | Type | Purpose |
 |---|---|---|
 | `so101_description` | ament_cmake | Xacro URDF, STL meshes, RViz config, view-only launch |
-| `so101_bringup` | ament_cmake | Mock-hardware ros2_control bringup |
-| `so101_control` | ament_python | Nodes `sine_mover` and `fk_monitor` |
+| `so101_control` | ament_python | Nodes `sine_mover` and `fk_monitor`, plus `launch/webcam.launch.py` (PC webcam via `v4l2_camera`) |
 | `so101_mujoco_description` | ament_cmake | MJCF model + `scripts/urdf_to_mjcf.py` |
 | `so101_mujoco_bringup` | ament_cmake | MuJoCo ros2_control bringup |
 | `so101_gazebo_description` | ament_cmake | Gazebo world + URDF fragment |
@@ -26,7 +25,7 @@ source install/setup.bash
 
 ```bash
 ros2 launch so101_description view_robot.launch.py      # no controllers
-ros2 launch so101_bringup bringup.launch.py             # mock hardware
+ros2 launch so101_control webcam.launch.py              # PC webcam -> /pc_camera/image_raw
 ros2 launch so101_mujoco_bringup mujoco.launch.py [headless:=false] [rviz:=true] [use_camera:=true]
 ros2 launch so101_gazebo_bringup gazebo.launch.py [gui:=true] [rviz:=true]
 ros2 run so101_control sine_mover                       # or fk_monitor
@@ -43,7 +42,7 @@ ros2 control list_controllers
 - **Single source**: `so101_description/urdf/so101.urdf.xacro`. The `use_camera` arg (default true) adds the wrist camera links. It ends with a `<ros2_control>` block defaulting to `mock_components/GenericSystem`.
 - **Hardware swap**: `mujoco.launch.py` and `gazebo.launch.py` process the xacro, then regex-replace the `<hardware>` block with the MuJoCo or Gazebo plugin. They raise an error unless there is exactly one `<hardware>` block, so keep it that way.
 - **Gazebo**: the launch file also splices `so101_gazebo_description/urdf/so101_gazebo.urdf.xml` before `</robot>`. That file is a fragment, not a standalone URDF. It adds the `world` link, the gz_ros2_control plugin and the camera sensor, and `@CONTROLLERS@` is substituted with the yaml path. World: `worlds/so101_world.sdf`.
-- **Controllers** (`config/controllers.yaml`, 100 Hz): `joint_state_broadcaster`, `arm_controller` (shoulder_pan, shoulder_lift, elbow_flex, wrist_flex, wrist_roll) and `gripper_controller` (gripper). Both are `JointTrajectoryController` with position commands. **The yaml is copied in three bringup packages and must be kept in sync by hand.**
+- **Controllers** (`config/controllers.yaml`, 100 Hz): `joint_state_broadcaster`, `arm_controller` (shoulder_pan, shoulder_lift, elbow_flex, wrist_flex, wrist_roll) and `gripper_controller` (gripper). Both are `JointTrajectoryController` with position commands. **The yaml is copied in two bringup packages and must be kept in sync by hand.**
 - **MuJoCo model**: `urdf_to_mjcf.py` generates `mjcf/so101_raw.xml` (gitignored), then `mjcf/so101.xml` is hand-edited. Re-running the script may overwrite those edits. CMake rewrites the mesh path at install time, so **rebuild after editing the MJCF**. Plugin config is in `so101_mujoco_bringup/config/mujoco_plugins.yaml`.
 - **Camera**: the name `wrist_camera` must match across the MJCF, `mujoco_plugins.yaml` and the Gazebo sensor. Topics: `/wrist_camera/image_raw`, `camera_info`, and `depth` (MuJoCo only).
 - **Control nodes** (`so101_control/so101_control/`):
@@ -58,7 +57,7 @@ ros2 control list_controllers
 
 ## Known issues
 
-- `view_robot.launch.py` loads `rviz/robot_view.rviz` and `bringup.launch.py` loads `rviz/view_robot.rviz`. Neither exists. Only `so101_description/rviz/basic_description.rviz` does.
+- `view_robot.launch.py` loads `rviz/robot_view.rviz`, which doesn't exist. Only `so101_description/rviz/basic_description.rviz` does.
 - `so101_control/**/__pycache__/*.pyc` are tracked in git despite `.gitignore`.
 - The linter stubs in `so101_control/test/` are unmodified template and likely fail (no license headers or docstrings).
 - `so101_description/urdf/so101_new_calib_camera.urdf` is a stale static URDF and is unused.

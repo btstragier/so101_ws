@@ -14,6 +14,7 @@ from launch_ros.actions import Node
 def _launch_setup(context):
     gui = LaunchConfiguration('gui').perform(context) == 'true'
     rviz = LaunchConfiguration('rviz').perform(context) == 'true'
+    webcam = LaunchConfiguration('webcam').perform(context) == 'true'
 
     desc_share = get_package_share_directory('so101_description')
     gz_desc_share = get_package_share_directory('so101_gazebo_description')
@@ -76,6 +77,10 @@ def _launch_setup(context):
             package='rviz2', executable='rviz2',
             arguments=['-d', os.path.join(bringup_share, 'rviz', 'gazebo.rviz')],
             parameters=[{'use_sim_time': True}]))
+    if webcam:
+        nodes.append(IncludeLaunchDescription(PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('so101_control'),
+                         'launch', 'webcam.launch.py'))))
     return nodes
 
 
@@ -85,5 +90,7 @@ def generate_launch_description():
                               description='Show the Gazebo window (false = server only)'),
         DeclareLaunchArgument('rviz', default_value='true',
                               description='Start RViz (robot model + wrist camera image)'),
+        DeclareLaunchArgument('webcam', default_value='false',
+                              description='Also publish the PC webcam on /pc_camera/image_raw'),
         OpaqueFunction(function=_launch_setup),
     ])

@@ -7,7 +7,7 @@ ROS 2 Jazzy workspace for the SO-101 arm (5 arm joints + gripper). One xacro is 
 | Package | Type | Purpose |
 |---|---|---|
 | `so101_description` | ament_cmake | Xacro URDF, STL meshes, RViz config, view-only launch |
-| `so101_control` | ament_python | Nodes `sine_mover` and `fk_monitor`, plus `launch/webcam.launch.py` (PC webcam via `v4l2_camera`) |
+| `so101_control` | ament_python | Nodes `sine_mover` and `fk_monitor`, `webcam_node` (OpenCV MJPG webcam publisher, `launch/webcam.launch.py`) |
 | `so101_mujoco_description` | ament_cmake | MJCF model + `scripts/urdf_to_mjcf.py` |
 | `so101_mujoco_bringup` | ament_cmake | MuJoCo ros2_control bringup |
 | `so101_gazebo_description` | ament_cmake | Gazebo world + URDF fragment |

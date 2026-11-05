@@ -9,7 +9,7 @@ To practice my ROS2, reinforcement learning, control and perception skills.
 | Package | What it is |
 | --- | --- |
 | `so101_description` | URDF/xacro, meshes and RViz config for the SO-101 arm |
-| `so101_control` | Python nodes: `sine_mover` (trajectory publisher), `fk_monitor` (Pinocchio forward kinematics), `webcam.launch.py` (PC webcam) |
+| `so101_control` | Python nodes: `sine_mover` (trajectory publisher), `fk_monitor` (Pinocchio forward kinematics), `webcam_node` (PC webcam publisher, OpenCV MJPG) |
 | `so101_mujoco_description` | MuJoCo (MJCF) model of the arm, generated from the URDF |
 | `so101_mujoco_bringup` | ros2_control bringup running the arm in **MuJoCo** |
 | `so101_gazebo_description` | Gazebo additions: world, camera sensor, `gz_ros2_control` plugin tag |
@@ -141,10 +141,10 @@ module. Change it in `scripts/urdf_to_mjcf.py` and regenerate the MJCF.
 
 #### PC webcam
 
-Streams your PC's webcam with `v4l2_camera` (`sudo apt install ros-jazzy-v4l2-camera`):
+Streams your PC's webcam with `webcam_node` (OpenCV, MJPG at 30 fps; `v4l2_camera` was dropped because it can't use MJPG and topped out around 16 fps):
 
 ```bash
-ros2 launch so101_control webcam.launch.py [video_device:=/dev/video0] [image_size:='[640,480]']
+ros2 launch so101_control webcam.launch.py [video_device:=/dev/video0] [width:=640] [height:=480] [fps:=30] [fourcc:=MJPG]
 ros2 run rqt_image_view rqt_image_view /pc_camera/image_raw
 ```
 
